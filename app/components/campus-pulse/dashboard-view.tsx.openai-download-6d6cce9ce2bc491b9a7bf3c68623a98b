@@ -1,0 +1,147 @@
+import type { Club, PendingClub, Report, View, AdminEvent } from "./types";
+import { dateLabel, type Row } from "../../lib/portal";
+export function DashboardView({
+  pending,
+  clubs,
+  reports,
+  events,
+  activity,
+  cached,
+  setView,
+}: {
+  pending: PendingClub[];
+  clubs: Club[];
+  reports: Report[];
+  events: AdminEvent[];
+  activity: Row[];
+  cached: boolean;
+  setView: (v: View) => void;
+}) {
+  const members = clubs.reduce((a, c) => a + c.members, 0),
+    active = clubs.filter((c) => c.status === "active").length,
+    flagged = clubs.length - active;
+  const upcoming = events.filter((e) => e.status === "published").length;
+  const metrics: [string, number, string, View][] = [
+    ["TOTAL MEMBERSHIPS", members, "Active memberships across clubs", "active-clubs"],
+    ["ACTIVE CLUBS", active, `${flagged} inactive clubs`, "active-clubs"],
+    ["PENDING APPLICATIONS", pending.length, "Awaiting governance review", "policy"],
+    ["OPEN REPORTS", reports.length, "Moderation queue", "reports"],
+  ];
+  return (
+    <div className="mc-dashboard">
+      <section className="mc-hero">
+        <div>
+          <p className="mc-kicker">CAMPUS PULSE · UNIVERSITY OF MPUMALANGA</p>
+          <h1>Super Admin</h1>
+          <p>
+            Monitor student clubs, events, governance and community activity from one workspace.
+          </p>
+        </div>
+        <div className="mc-hero-status">
+          <span />
+          <b>{cached ? "Connecting…" : "Data connected"}</b>
+          <small>{cached ? "Waiting for server confirmation" : "Live Firestore updates"}</small>
+        </div>
+      </section>
+      <section className="mc-metrics">
+        {metrics.map(([label, value, caption, view]) => (
+          <button key={label} onClick={() => setView(view)}>
+            <small>{label}</small>
+            <strong>{value}</strong>
+            <span>{caption}</span>
+            <em>↗</em>
+          </button>
+        ))}
+      </section>
+      <section className="mc-dashboard-grid">
+        <article className="mc-dark-card mc-attention">
+          <header>
+            <div>
+              <small>OPERATIONS</small>
+              <h2>Needs your attention</h2>
+            </div>
+            <b>{pending.length + reports.length}</b>
+          </header>
+          <button onClick={() => setView("policy")}>
+            <i className="violet">A</i>
+            <span>
+              <b>{pending.length} club applications</b>
+              <small>Registration and policy review</small>
+            </span>
+            <em>Review →</em>
+          </button>
+          <button onClick={() => setView("events")}>
+            <i className="amber">E</i>
+            <span>
+              <b>{upcoming} upcoming events</b>
+              <small>Published mobile events</small>
+            </span>
+            <em>View →</em>
+          </button>
+          <button onClick={() => setView("reports")}>
+            <i className="red">R</i>
+            <span>
+              <b>{reports.length} open reports</b>
+              <small>Community moderation</small>
+            </span>
+            <em>Review →</em>
+          </button>
+        </article>
+        <article className="mc-dark-card mc-health2">
+          <header>
+            <div>
+              <small>PLATFORM</small>
+              <h2>Connection</h2>
+            </div>
+          </header>
+          <p>
+            <span>Firestore data</span>
+            <b>{cached ? "Connecting" : "Connected"}</b>
+          </p>
+          <p>
+            <span>Access</span>
+            <b>Superadmin verified</b>
+          </p>
+          <p>Connection status reflects this browser. Platform uptime is not measured.</p>
+        </article>
+        <article className="mc-dark-card mc-trend">
+          <header>
+            <div>
+              <small>ENGAGEMENT</small>
+              <h2>Published content</h2>
+            </div>
+            <button onClick={() => setView("analytics")}>Analytics ↗</button>
+          </header>
+          <p>
+            <strong>{events.length}</strong> events in the database
+          </p>
+          <p>
+            Use Analytics to see recorded memberships and content. External RSVP attendance is not
+            tracked.
+          </p>
+        </article>
+        <article className="mc-dark-card mc-recent">
+          <header>
+            <div>
+              <small>RECENT</small>
+              <h2>Platform activity</h2>
+            </div>
+            <button onClick={() => setView("notifications")}>View all ↗</button>
+          </header>
+          <div>
+            {activity.slice(0, 5).map((a) => (
+              <p key={a.id}>
+                <i className="violet" />
+                <span>
+                  <b>{a.title}</b>
+                  <small>{dateLabel(a.createdAt)}</small>
+                </span>
+              </p>
+            ))}
+            {!activity.length && <p>No recorded activity yet.</p>}
+          </div>
+        </article>
+      </section>
+    </div>
+  );
+}
